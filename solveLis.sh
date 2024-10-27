@@ -19,4 +19,4 @@ echo "***************************************"
 
 # TASK4
 # Find a μ yielding an acceleration of the previous eigensolver (power method)
-mpirun -n 4 $LIS_BIN_DIR/eigen1 $LIS_DATA_DIR/ATA.mtx $LIS_DATA_DIR/ATAeigvec.txt $LIS_DATA_DIR/ATAhist.txt -e pi -etol 1.e-8 -shift 1000
+mpirun -n 4 $LIS_BIN_DIR/eigen1 $LIS_DATA_DIR/ATA.mtx $LIS_DATA_DIR/ATAeigvec.txt $LIS_DATA_DIR/ATAhist.txt -e pi -etol 1.e-8 -shift 700

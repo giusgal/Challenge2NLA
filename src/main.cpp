@@ -85,7 +85,8 @@ int main() {
     number of iterations required to achieve a tolerance of 10^−8.
     
     Result:
-     μ = 1000
+     μ = 700
+     relative residual = 7.757747e-10
      iterations = 7
     */
 
@@ -111,6 +112,7 @@ int main() {
 
     // TODO: is this correct? (I mean, the way the matrices are computed and transformed
     //  into sparse matrices)
+    // TODO: SEE THIS
     /*
     TASK6
     Compute the matrices C and D described in (1) assuming k = 40 and k = 80. Report the
@@ -197,6 +199,9 @@ int main() {
             checkerboardNoisy.rows(), checkerboardNoisy.cols());
 
 
+    // FROM NOW ON: all the variables whose name starts with "checkerboard" are actually
+    //  referring to the checkerboardNoisy image
+
     /*
     TASK10
     Using the SVD module of the Eigen library, perform a singular value decomposition of the
@@ -225,10 +230,10 @@ int main() {
     Image Ck4 = checkerboardU.block(0,0,checkerboardU.rows(),k4);
     Image Dk4 = checkerboardV.block(0,0,checkerboardV.rows(),k4)*checkerboardSigma.block(0,0,k4,k4);
 
-    std::cout << "[INFO] size(Ck3) = " << Ck3.rows() << "x" << Ck3.cols() << std::endl;
-    std::cout << "[INFO] size(Dk3) = " << Dk3.rows() << "x" << Dk3.cols() << std::endl;
-    std::cout << "[INFO] size(Ck4) = " << Ck4.rows() << "x" << Ck4.cols() << std::endl;
-    std::cout << "[INFO] size(Dk4) = " << Dk4.rows() << "x" << Dk4.cols() << std::endl;
+    std::cout << "[INFO] size(Ck3) (rows x cols) = " << Ck3.rows() << "x" << Ck3.cols() << std::endl;
+    std::cout << "[INFO] size(Dk3) (rows x cols) = " << Dk3.rows() << "x" << Dk3.cols() << std::endl;
+    std::cout << "[INFO] size(Ck4) (rows x cols) = " << Ck4.rows() << "x" << Ck4.cols() << std::endl;
+    std::cout << "[INFO] size(Dk4) (rows x cols) = " << Dk4.rows() << "x" << Dk4.cols() << std::endl;
 
     /*
     TASK12
@@ -238,8 +243,10 @@ int main() {
     Image checkerbaordCmpK3 = Ck3*Dk3.transpose();
     Image checkerbaordCmpK4 = Ck4*Dk4.transpose();
 
-    Utils::storeImage("../data/checkerbaordCmpK3.png", checkerbaordCmpK3, checkerbaordCmpK3.rows(), checkerbaordCmpK3.cols());
-    Utils::storeImage("../data/checkerbaordCmpK4.png", checkerbaordCmpK4, checkerbaordCmpK4.rows(), checkerbaordCmpK4.cols());
+    Utils::storeImage("../data/checkerbaordCmpK3.png", checkerbaordCmpK3,
+            checkerbaordCmpK3.rows(), checkerbaordCmpK3.cols());
+    Utils::storeImage("../data/checkerbaordCmpK4.png", checkerbaordCmpK4,
+            checkerbaordCmpK4.rows(), checkerbaordCmpK4.cols());
 
     return 0;
 }
