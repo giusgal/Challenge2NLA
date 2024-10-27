@@ -15,7 +15,7 @@ using SpVector = Eigen::SparseMatrix<double, Eigen::RowMajor>;
 
 int main() {
     /*
-    TASK 1
+    TASK1
     Load the image as an Eigen matrix A with size m×n. Each entry in the matrix corresponds
     to a pixel on the screen and takes a value somewhere between 0 (black) and 255 (white).
     Compute the matrix product A^TA and report the euclidean norm of A^TA.
@@ -202,9 +202,44 @@ int main() {
     Using the SVD module of the Eigen library, perform a singular value decomposition of the
     matrix corresponding to the noisy image. Report the two largest computed singular values.
     */
+    Eigen::BDCSVD<Image> svd2(checkerboardNoisy, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Vector checkerboardSingularValues = svd2.singularValues();
+    Image checkerboardU = svd2.matrixU();
+    Image checkerboardV = svd2.matrixV();
+    Image checkerboardSigma = checkerboardSingularValues.asDiagonal();
+
+    std::cout << "[INFO] σ1(checkerboardNoisy) = " << checkerboardSingularValues(0) << std::endl;
+    std::cout << "[INFO] σ2(checkerboardNoisy) = " << checkerboardSingularValues(1) << std::endl;
 
 
+    /*
+    TASK11
+    Starting from the previously computed SVD, create the matrices C and D defined in (1)
+    assuming k = 5 and k = 10. Report the size of the matrices C and D.
+    */
+    double k3 = 5;
+    Image Ck3 = checkerboardU.block(0,0,checkerboardU.rows(),k3);
+    Image Dk3 = checkerboardV.block(0,0,checkerboardV.rows(),k3)*checkerboardSigma.block(0,0,k3,k3);
 
+    double k4 = 10;
+    Image Ck4 = checkerboardU.block(0,0,checkerboardU.rows(),k4);
+    Image Dk4 = checkerboardV.block(0,0,checkerboardV.rows(),k4)*checkerboardSigma.block(0,0,k4,k4);
+
+    std::cout << "[INFO] size(Ck3) = " << Ck3.rows() << "x" << Ck3.cols() << std::endl;
+    std::cout << "[INFO] size(Dk3) = " << Dk3.rows() << "x" << Dk3.cols() << std::endl;
+    std::cout << "[INFO] size(Ck4) = " << Ck4.rows() << "x" << Ck4.cols() << std::endl;
+    std::cout << "[INFO] size(Dk4) = " << Dk4.rows() << "x" << Dk4.cols() << std::endl;
+
+    /*
+    TASK12
+    Compute the compressed images as the matrix product CD^T (again for k = 5 and k = 10).
+    Export and upload the resulting images in .png.
+    */
+    Image checkerbaordCmpK3 = Ck3*Dk3.transpose();
+    Image checkerbaordCmpK4 = Ck4*Dk4.transpose();
+
+    Utils::storeImage("../data/checkerbaordCmpK3.png", checkerbaordCmpK3, checkerbaordCmpK3.rows(), checkerbaordCmpK3.cols());
+    Utils::storeImage("../data/checkerbaordCmpK4.png", checkerbaordCmpK4, checkerbaordCmpK4.rows(), checkerbaordCmpK4.cols());
 
     return 0;
 }
