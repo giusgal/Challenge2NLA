@@ -2,15 +2,16 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <unsupported/Eigen/SparseExtra>
+#include <cstdlib>
 
 #include "../include/utils.hpp"
 
 using Image = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-using spImage = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+using SpImage = Eigen::SparseMatrix<double, Eigen::RowMajor>;
 
 // Just a semantic thing
 using Vector = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-using spVector = Eigen::SparseMatrix<double, Eigen::RowMajor>;
+using SpVector = Eigen::SparseMatrix<double, Eigen::RowMajor>;
 
 int main() {
     /*
@@ -25,7 +26,7 @@ int main() {
 
     Image ATA{A.transpose()*A};
     double ATAnorm = ATA.norm();
-    std::cout << "[INFO] norm(ATA) = " << ATAnorm << std::endl;
+    std::cout << "[INFO] norm(A^TA) = " << ATAnorm << std::endl;
 
     /*
     TASK2
@@ -89,11 +90,120 @@ int main() {
     */
 
 
+    // TODO: Is there a difference in computing the norm when considering the full and reduced SVD?
     /*
     TASK5
     Using the SVD module of the Eigen library, perform a singular value decomposition of the
     matrix A. Report the Euclidean norm of the diagonal matrix Σ of the singular values.
     */
+
+    // Eigen::BDCSVD<Image> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::BDCSVD<Image> svd(A, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Vector AsingularValues = svd.singularValues();
+    Image AU = svd.matrixU();
+    Image AV = svd.matrixV();
+    // std::cout << "[TEST]" << AsingularValues(0) << std::endl;
+    // std::cout << "[TEST]" << AsingularValues(1) << std::endl;
+    Image Asigma = AsingularValues.asDiagonal();
+    double AsigmaNorm = Asigma.norm();
+    std::cout << "[INFO] norm(Σ_A) = " << AsigmaNorm << std::endl;
+
+
+    // TODO: is this correct? (I mean, the way the matrices are computed and transformed
+    //  into sparse matrices)
+    /*
+    TASK6
+    Compute the matrices C and D described in (1) assuming k = 40 and k = 80. Report the
+    number of nonzero entries in the matrices C and D
+    */
+    double k1 = 40;
+    SpImage Ck1 = AU.block(0,0,AU.rows(),k1).sparseView();
+    SpImage Dk1 = (AV.block(0,0,AV.rows(),k1)*Asigma.block(0,0,k1,k1)).sparseView();
+
+    double k2 = 80;
+    SpImage Ck2 = AU.block(0,0,AU.rows(),k2).sparseView();
+    SpImage Dk2 = (AV.block(0,0,AV.rows(),k2)*Asigma.block(0,0,k2,k2)).sparseView();
+
+    int Ck1nnz = Ck1.nonZeros();
+    int Dk1nnz = Dk1.nonZeros();
+    int Ck2nnz = Ck2.nonZeros();
+    int Dk2nnz = Dk2.nonZeros();
+
+    std::cout << "[INFO] nnz(Ck1) = " << Ck1nnz << std::endl;
+    std::cout << "[INFO] nnz(Dk1) = " << Dk1nnz << std::endl;
+    std::cout << "[INFO] nnz(Ck2) = " << Ck2nnz << std::endl;
+    std::cout << "[INFO] nnz(Dk2) = " << Dk2nnz << std::endl;
+    
+
+    /*
+    TASK7
+    Compute the compressed images as the matrix product CD^T (again for k = 40 and k = 80).
+    Export and upload the resulting images in .png.
+    */
+    SpImage AcmpK1 = Ck1*Dk1.transpose();
+    SpImage AcmpK2 = Ck2*Dk2.transpose();
+
+    Utils::storeImage("../data/AcmpK1.png", Image(AcmpK1), AcmpK1.rows(), AcmpK1.cols());
+    Utils::storeImage("../data/AcmpK2.png", Image(AcmpK2), AcmpK2.rows(), AcmpK2.cols());
+
+    /*
+    TASK8
+    Using Eigen create a black and white checkerboard image (as the one depicted below)
+    with height and width equal to 200 pixels. Report the Euclidean norm of the matrix
+    corresponding to the image.
+    */
+    int checkH = 200;
+    int checkW = 200;
+    int blockDim = 25;
+    Image checkerboard = Image::Zero(checkH, checkW);
+    Image whiteBlock = Image::Ones(blockDim, blockDim);
+
+    int numBlocks = 8;
+    int alternate = 0;
+    for(int i = 0; i < numBlocks; ++i) {
+        alternate = (i+1) % 2;
+        for(int j = 0; j < numBlocks; j+=2) {
+            checkerboard.block(i*blockDim,(j+alternate)*blockDim, blockDim, blockDim) = whiteBlock;
+        }
+    }
+
+    // TEST
+    Utils::storeImage("../data/checkerboard.png", checkerboard, checkerboard.rows(), checkerboard.cols());
+    
+    double checkerboardNorm = checkerboard.norm();
+    std::cout << "[INFO] norm(checkerboard) = " << checkerboardNorm << std::endl;
+
+    // TODO: check also without lambda expression
+    /*
+    TASK9
+    Introduce a noise into the checkerboard image by adding random fluctuations of color
+    ranging between [−50, 50] to each pixel. Export the resulting image in .png and upload it.
+    */
+    Image checkerboardNoisy = checkerboard.unaryExpr([](double val) -> double {
+        double randValue = ((rand() % 101) - 50) / 255.0;
+
+        if(val + randValue > 1.0) {
+            return 1.0;
+        }
+        else if(val + randValue < 0.0) {
+            return 0.0;
+        }
+        else {
+            return val + randValue;
+        }
+    });
+
+    Utils::storeImage("../data/checkerboardNoisy.png", checkerboardNoisy,
+            checkerboardNoisy.rows(), checkerboardNoisy.cols());
+
+
+    /*
+    TASK10
+    Using the SVD module of the Eigen library, perform a singular value decomposition of the
+    matrix corresponding to the noisy image. Report the two largest computed singular values.
+    */
+
+
 
 
     return 0;
